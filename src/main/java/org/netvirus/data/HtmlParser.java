@@ -9,11 +9,15 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 public class HtmlParser {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HtmlParser.class);
-    private boolean brocketLink = false;
+    private boolean isBrockenLink = false;
+    private boolean isBrockenLinkWithBypass = false;
+    private boolean isTextWithLink = false;
 
     protected HtmlParser() {
         // Visibility
@@ -35,25 +39,40 @@ public class HtmlParser {
                         stringBuilder.append(getStringWithMultipleLines(afterNpcName));
                     }
                     htmlFile.setHasNpcName(true);
-                } else if (line.contains("[")) {
-                    stringBuilder.append(getStringUrlWithMultipleLines(line));
+                } else if (line.contains("[") || line.contains("]") || line.contains("|")) {
                     if (!htmlFile.isHasUrlLinks()) {
                         htmlFile.setHasUrlLinks(true);
                         stringBuilder.append("<table border=0 cellspacing=0 cellpadding=0 width=290 align=\"center\">").append(System.lineSeparator());
-                        stringBuilder.append("<tr>").append(System.lineSeparator());
-                        stringBuilder.append("    <td FIXWIDTH=90 align=center>").append(System.lineSeparator());
+                    }
+
+                    Map<String, String> links = getStringUrlWithMultipleLines(line);
+                    if (!isBrockenLink) {
+                        links.forEach((k, v) -> {
+                            stringBuilder.append("<tr>").append(System.lineSeparator());
+                            stringBuilder.append("    <td FIXWIDTH=90 align=center>").append(System.lineSeparator());
+                            stringBuilder.append("          <button value=\"").append(k.toString()).append("\" ");
+                            stringBuilder.append("action=\"bypass -h ").append(v.toString()).append("\" back=\"l2ui_ct1.button.button_df_small_down\" fore=\"l2ui_ct1.button.button_df_small\" width=\"280\" height=\"25\" />");
+                            stringBuilder.append("    </td>").append(System.lineSeparator());
+                            stringBuilder.append("</tr>").append(System.lineSeparator());
+                        });
+                    } else {
+                        stringBuilder.append(links.get("line"));
                     }
                 } else {
                     stringBuilder.append(getStringWithMultipleLines(line));
                 }
             }
         });
+
+        if (htmlFile.isHasUrlLinks())
+            stringBuilder.append("<table>");
+
         htmlFile.setFileText(stringBuilder);
         return htmlFile;
     }
 
     public String getNpcName(String line) {
-        String result = null;
+        String result;
         try {
             result = line.substring(line.indexOf("!") + 1, line.indexOf(":"));
         } catch (Exception e) {
@@ -111,32 +130,42 @@ public class HtmlParser {
         return result;
     }
 
-    public String getStringUrlWithMultipleLines(String line) {
-        StringBuilder sb = new StringBuilder("");
+    public Map<String, String> getStringUrlWithMultipleLines(String line) {
+        Map<String, String> link = new HashMap<>();
+
         int countOpenTag = StringUtils.countMatches(line, "[");
-        int countCloseTag = StringUtils.countMatches(line, "]");
+
         for (int i = 0; i < countOpenTag; i++) {
-            if (line.startsWith("[") && !line.endsWith("]")) {
-                brocketLink = true;
-                String link = line.substring(line.indexOf("[") + 1);
+            if (line.startsWith("[") && !line.endsWith("]") && !line.contains("]"))
+            {// [npc_%objectId%_Quest
+                isBrockenLink = true;
+                if (!line.contains("|"))
+                {// [npc_%objectId%_Quest
+                    isBrockenLinkWithBypass = false;
+                    link.put("bypass", line.substring(line.indexOf("[") + 1));
+                }
+                else
+                {// [npc_%objectId%_Quest|Que
+                    isBrockenLinkWithBypass = true;
+                    link.put("bypass", line.substring(line.indexOf("[") + 1, line.indexOf("|")));
+                    link.put("btnName", line.substring(line.indexOf("|") + 2));
+                }
 
-
-            } else if (line.startsWith("[") && line.endsWith("]")) {
-                String link = line.substring(line.indexOf("[") + 1, line.indexOf("|"));
+            } else if (line.startsWith("[") && line.endsWith("]"))
+            {// [npc_%objectId%_Quest|Quest]
+                String bypass = line.substring(line.indexOf("[") + 1, line.indexOf("|"));
                 String btnName = line.substring(line.indexOf("|") + 2, line.indexOf("]") - 1);
-                sb.append("<button value=\"").append(btnName).append("\" ");
-                sb.append("action=\"bypass -h ").append(link).append("\" back=\"l2ui_ct1.button.button_df_small_down\" fore=\"l2ui_ct1.button.button_df_small\" width=\"280\" height=\"25\" />");
-            } else {
-                sb.append(StringUtils.substringBefore(line, "[").trim()).append("<br>").append(System.lineSeparator());
+                link.put("bypass", bypass);
+                link.put("btnName", btnName);
 
+            } else if (!line.startsWith("[") && line.contains("[") && !line.contains("]"))
+            {// Some text. [npc_%objectId%_Chat 1|Ask
+                isTextWithLink = true;
+                link.put("text", StringUtils.substringBefore(line, "[").trim());
             }
         }
-        return sb.toString();
+        return link;
     }
-
-//    public String getButton(String line) {
-//
-//    }
 
     public String removeExtraCharacters(String line) {
         return (line != null) ? line.replace("%%", "").trim() : null;
