@@ -32,17 +32,31 @@ public class HtmlParser {
         Files.lines(Paths.get(fileName), StandardCharsets.UTF_8).forEach(stringBuilder::append);
 
         // Remove extra characters
-        int count = StringUtils.countMatches(stringBuilder, "%%");
-        for (int i = 0; i < count; i++)
-        {
-            stringBuilder.replace(stringBuilder.indexOf("%%"), stringBuilder.indexOf("%%") + 2, "") ;
+        int countPercents = StringUtils.countMatches(stringBuilder, "%%");
+        if (countPercents > 0) {
+            for (int i = 0; i < countPercents; i++) {
+                stringBuilder.replace(stringBuilder.indexOf("%%"), stringBuilder.indexOf("%%") + 2, "");
+            }
+        }
+
+        int countDots = StringUtils.countMatches(stringBuilder, "...");
+        if (countDots > 0) {
+            for (int i = 0; i < countDots; i++) {
+                stringBuilder.replace(stringBuilder.indexOf("..."), stringBuilder.indexOf("...") + 3, ".");
+            }
+        }
+
+        int countDot = StringUtils.countMatches(stringBuilder, ".)");
+        if (countDot > 0) {
+            for (int i = 0; i < countDot; i++) {
+                stringBuilder.replace(stringBuilder.indexOf(".)"), stringBuilder.indexOf(".)") + 2, ")");
+            }
         }
 
         // Change NPC name
         String npcName = stringBuilder.substring(stringBuilder.indexOf("!") + 1, stringBuilder.indexOf(":"));
-        //stringBuilder.replace(stringBuilder.indexOf("!"), stringBuilder.indexOf(":") + 1, "<font color=\"36DC25\">" + npcName + ":</font><br>" + System.lineSeparator()) ;
         sbText.append("<font color=\"36DC25\">" + npcName + ":</font><br>" + System.lineSeparator());
-        cutString(stringBuilder, stringBuilder.indexOf("!"), stringBuilder.indexOf(":") + 2);
+        stringBuilder.delete(stringBuilder.indexOf("!"), stringBuilder.indexOf(":") + 2);
 
         // Get all bypass and button's names
         int tag = StringUtils.countMatches(stringBuilder, "[");
@@ -53,14 +67,14 @@ public class HtmlParser {
             String bypass = sbLinks.substring(sbLinks.indexOf("[") + 1, sbLinks.indexOf("|"));
             String buttonName = sbLinks.substring(sbLinks.indexOf("|") + 1, sbLinks.indexOf("]") - 1);
             buttons.put(buttonName, bypass);
-            cutString(stringBuilder, stringBuilder.indexOf("["), stringBuilder.indexOf("]") + 1);
+            stringBuilder.delete(stringBuilder.indexOf("["), stringBuilder.indexOf("]") + 1);
         }
 
         // Get all text
         int dot = StringUtils.countMatches(stringBuilder, ".");
         for (int i = 0; i < dot; i++) {
             sbText.append(getStringBeforeDot(stringBuilder.toString().trim())).append("<br1>" + System.lineSeparator());
-            cutString(stringBuilder, 0, stringBuilder.indexOf(".") + 1);
+            stringBuilder.delete(0, stringBuilder.indexOf(".") + 1);
         }
 
         if (!buttons.isEmpty()) {
@@ -88,10 +102,6 @@ public class HtmlParser {
             result = line;
         }
         return result;
-    }
-
-    public void cutString(StringBuilder sb, int startIndex, int stopIndex) {
-        sb.delete(startIndex, stopIndex);
     }
 
     public static HtmlParser getInstance() {
