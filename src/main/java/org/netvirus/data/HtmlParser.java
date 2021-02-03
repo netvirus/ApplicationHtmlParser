@@ -1,7 +1,6 @@
 package org.netvirus.data;
 
 import org.apache.commons.lang3.StringUtils;
-import org.netvirus.model.HtmlFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,16 +16,12 @@ public class HtmlParser {
     private static final Logger LOGGER = LoggerFactory.getLogger(HtmlParser.class);
     private Map<String, String> buttons = new HashMap<>();
 
-    protected HtmlParser() {
-        // Visibility
+    public HtmlParser() {
     }
 
-    public HtmlFile load(String fileName) throws IOException {
+    public StringBuilder load(String fileName) throws IOException {
         StringBuilder stringBuilder = new StringBuilder();
         StringBuilder sbText = new StringBuilder();
-
-        HtmlFile htmlFile = new HtmlFile();
-        htmlFile.setFileName(fileName);
 
         LOGGER.info("Loading HTML file: " + fileName);
         Files.lines(Paths.get(fileName), StandardCharsets.UTF_8).forEach(stringBuilder::append);
@@ -36,6 +31,20 @@ public class HtmlParser {
         if (countPercents > 0) {
             for (int i = 0; i < countPercents; i++) {
                 stringBuilder.replace(stringBuilder.indexOf("%%"), stringBuilder.indexOf("%%") + 2, "");
+            }
+        }
+
+        int count4Dots = StringUtils.countMatches(stringBuilder, "....");
+        if (count4Dots > 0) {
+            for (int i = 0; i < count4Dots; i++) {
+                stringBuilder.replace(stringBuilder.indexOf("...."), stringBuilder.indexOf("....") + 4, ".");
+            }
+        }
+
+        int countDotsAsk = StringUtils.countMatches(stringBuilder, "...?");
+        if (countDotsAsk > 0) {
+            for (int i = 0; i < countDotsAsk; i++) {
+                stringBuilder.replace(stringBuilder.indexOf("...?"), stringBuilder.indexOf("...?") + 4, "?");
             }
         }
 
@@ -55,43 +64,67 @@ public class HtmlParser {
 
         // Change NPC name
         String npcName = stringBuilder.substring(stringBuilder.indexOf("!") + 1, stringBuilder.indexOf(":"));
-        sbText.append("<font color=\"36DC25\">" + npcName + ":</font><br>" + System.lineSeparator());
-        stringBuilder.delete(stringBuilder.indexOf("!"), stringBuilder.indexOf(":") + 2);
+        if (npcName.length() > 0) {
+            sbText.append("<font color=\"36DC25\">" + npcName + ":</font><br>" + System.lineSeparator());
+            stringBuilder.delete(stringBuilder.indexOf("!"), stringBuilder.indexOf(":") + 2);
+        }
 
         // Get all bypass and button's names
         int tag = StringUtils.countMatches(stringBuilder, "[");
-        for (int i = 0; i < tag; i++)
-        {
-            StringBuilder sbLinks = new StringBuilder();
-            sbLinks.append(stringBuilder.substring(stringBuilder.indexOf("["), stringBuilder.indexOf("]") + 1).trim());
-            String bypass = sbLinks.substring(sbLinks.indexOf("[") + 1, sbLinks.indexOf("|"));
-            String buttonName = sbLinks.substring(sbLinks.indexOf("|") + 1, sbLinks.indexOf("]") - 1);
-            buttons.put(buttonName, bypass);
-            stringBuilder.delete(stringBuilder.indexOf("["), stringBuilder.indexOf("]") + 1);
+        if (tag > 0) {
+            for (int i = 0; i < tag; i++) {
+                StringBuilder sbLinks = new StringBuilder();
+                sbLinks.append(stringBuilder.substring(stringBuilder.indexOf("["), stringBuilder.indexOf("]") + 1).trim());
+                String bypass = sbLinks.substring(sbLinks.indexOf("[") + 1, sbLinks.indexOf("|"));
+                String buttonName = sbLinks.substring(sbLinks.indexOf("|") + 1, sbLinks.indexOf("]") - 1);
+
+                // Search "." and cut
+                int count1 = StringUtils.countMatches(buttonName, ".");
+                if (count1 > 0) {
+                    for (int t = 0; t < count1; t++) {
+                        buttonName = buttonName.replace(".", "");
+                    }
+                }
+
+                // Search "." and cut
+                int count2 = StringUtils.countMatches(buttonName, "\"");
+                if (count2 > 0) {
+                    for (int t = 0; t < count2; t++) {
+                        buttonName = buttonName.replace("\"", "");
+                    }
+                }
+
+                buttons.put(buttonName, bypass);
+                stringBuilder.delete(stringBuilder.indexOf("["), stringBuilder.indexOf("]") + 1);
+            }
         }
 
         // Get all text
         int dot = StringUtils.countMatches(stringBuilder, ".");
-        for (int i = 0; i < dot; i++) {
-            sbText.append(getStringBeforeDot(stringBuilder.toString().trim())).append("<br1>" + System.lineSeparator());
-            stringBuilder.delete(0, stringBuilder.indexOf(".") + 1);
+        if (dot > 0) {
+            for (int i = 0; i < dot; i++) {
+                sbText.append(getStringBeforeDot(stringBuilder.toString().trim())).append("<br1>" + System.lineSeparator());
+                stringBuilder.delete(0, stringBuilder.indexOf(".") + 1);
+            }
+        } else if (stringBuilder.length() > 0) {
+            sbText.append(stringBuilder.toString().trim()).append("<br1>").append(System.lineSeparator());
         }
+
+        stringBuilder.setLength(0);
 
         if (!buttons.isEmpty()) {
             sbText.append("<table border=0 cellspacing=0 cellpadding=0 width=290 align=\"center\">").append(System.lineSeparator());
             buttons.forEach((key, value) -> {
-                sbText.append("<tr>").append(System.lineSeparator());
-                sbText.append("    <td FIXWIDTH=90 align=center>").append(System.lineSeparator());
+                sbText.append("      <tr>").append(System.lineSeparator());
+                sbText.append("          <td FIXWIDTH=90 align=center>").append(System.lineSeparator());
                 sbText.append("          <button value=\"").append(key).append("\" ");
                 sbText.append("action=\"bypass -h ").append(value).append("\" back=\"l2ui_ct1.button.button_df_small_down\" fore=\"l2ui_ct1.button.button_df_small\" width=\"280\" height=\"25\">").append(System.lineSeparator());
-                sbText.append("    </td>").append(System.lineSeparator());
-                sbText.append("</tr>").append(System.lineSeparator());
+                sbText.append("          </td>").append(System.lineSeparator());
+                sbText.append("      </tr>").append(System.lineSeparator());
             });
             sbText.append("</table>");
         }
-
-        htmlFile.setFileText(sbText);
-        return htmlFile;
+        return sbText;
     }
 
     public String getStringBeforeDot(String line) {
@@ -102,13 +135,5 @@ public class HtmlParser {
             result = line;
         }
         return result;
-    }
-
-    public static HtmlParser getInstance() {
-        return SingletonHolder.INSTANCE;
-    }
-
-    private static final class SingletonHolder {
-        protected static final HtmlParser INSTANCE = new HtmlParser();
     }
 }

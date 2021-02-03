@@ -1,7 +1,6 @@
 package org.netvirus;
 
 import org.netvirus.data.HtmlParser;
-import org.netvirus.model.HtmlFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,16 +20,16 @@ public class ApplicationHtmlParser {
 
     public static void main(String[] args) {
 
-        HtmlParser htmlParser = HtmlParser.getInstance();
-
         try (Stream<Path> walk = Files.walk(Paths.get("C:\\IN\\"))) {
 
             List<String> files = walk.map(x -> x.toString()).filter(f -> f.endsWith(".htm")).collect(Collectors.toList());
 
             files.forEach(fileName -> {
-                HtmlFile htmlFile = new HtmlFile();
+                StringBuilder fileText = new StringBuilder();
+                HtmlParser htmlParser = new HtmlParser();
+
                 try {
-                    htmlFile = htmlParser.load(fileName);
+                    fileText = htmlParser.load(fileName);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -39,13 +38,15 @@ public class ApplicationHtmlParser {
                 Path path = Paths.get(fileName);
                 String dir =  path.getParent().toString();
                 File newDir = new File(dir);
-                newDir.mkdir();
-                LOGGER.info("Created directory: " + dir);
+                if (!Files.exists(path)) {
+                    newDir.mkdir();
+                    LOGGER.info("Created directory: " + dir);
+                }
 
                 try {
                     File newFile = new File(fileName);
                     FileWriter fileWriter = new FileWriter(newFile, false);
-                    fileWriter.write(htmlFile.getFileText().toString());
+                    fileWriter.write(fileText.toString());
                     fileWriter.close();
                     LOGGER.info("Writed a file: " + fileName);
                 } catch (IOException e) {
