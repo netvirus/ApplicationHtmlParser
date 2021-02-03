@@ -66,7 +66,7 @@ public class HtmlParser {
         String npcName = stringBuilder.substring(stringBuilder.indexOf("!") + 1, stringBuilder.indexOf(":"));
         if (npcName.length() > 0) {
             sbText.append("<font color=\"36DC25\">" + npcName + ":</font><br>" + System.lineSeparator());
-            stringBuilder.delete(stringBuilder.indexOf("!"), stringBuilder.indexOf(":") + 2);
+            stringBuilder.delete(0, stringBuilder.indexOf(":") + 2);
         }
 
         // Get all bypass and button's names
@@ -93,6 +93,13 @@ public class HtmlParser {
                         buttonName = buttonName.replace("\"", "");
                     }
                 }
+
+//                int countQot = StringUtils.countMatches(stringBuilder, "&quot;");
+//                if (countQot > 0) {
+//                    for (int i = 0; i < countQot; i++) {
+//                        stringBuilder.replace(stringBuilder.indexOf("&quot;"), stringBuilder.indexOf("&quot;") + 6, "");
+//                    }
+//                }
 
                 buttons.put(buttonName, bypass);
                 stringBuilder.delete(stringBuilder.indexOf("["), stringBuilder.indexOf("]") + 1);
