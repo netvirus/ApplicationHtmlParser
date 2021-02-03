@@ -63,8 +63,12 @@ public class HtmlParser {
         }
 
         // Change NPC name
-        String npcName = stringBuilder.substring(stringBuilder.indexOf("!") + 1, stringBuilder.indexOf(":"));
+        String npcName = stringBuilder.substring(0, stringBuilder.indexOf(":"));
         if (npcName.length() > 0) {
+            int tmp = StringUtils.countMatches(npcName, "!");
+            if (tmp > 0) {
+                stringBuilder.replace(stringBuilder.indexOf("!"), stringBuilder.indexOf("!") + 1, "");
+            }
             sbText.append("<font color=\"36DC25\">" + npcName + ":</font><br>" + System.lineSeparator());
             stringBuilder.delete(0, stringBuilder.indexOf(":") + 2);
         }
@@ -94,12 +98,12 @@ public class HtmlParser {
                     }
                 }
 
-//                int countQot = StringUtils.countMatches(stringBuilder, "&quot;");
-//                if (countQot > 0) {
-//                    for (int i = 0; i < countQot; i++) {
-//                        stringBuilder.replace(stringBuilder.indexOf("&quot;"), stringBuilder.indexOf("&quot;") + 6, "");
-//                    }
-//                }
+                int countQot = StringUtils.countMatches(stringBuilder, "&quot;");
+                if (countQot > 0) {
+                    for (int q = 0; q < countQot; q++) {
+                        buttonName = buttonName.replace("&quot;", "");
+                    }
+                }
 
                 buttons.put(buttonName, bypass);
                 stringBuilder.delete(stringBuilder.indexOf("["), stringBuilder.indexOf("]") + 1);
