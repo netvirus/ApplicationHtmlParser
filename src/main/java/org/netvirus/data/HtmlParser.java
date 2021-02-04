@@ -19,7 +19,7 @@ public class HtmlParser {
     public HtmlParser() {
     }
 
-    public StringBuilder load(String fileName) throws IOException {
+    public String load(String fileName) throws IOException {
         StringBuilder stringBuilder = new StringBuilder();
         StringBuilder sbText = new StringBuilder();
 
@@ -135,7 +135,7 @@ public class HtmlParser {
             });
             sbText.append("</table>");
         }
-        return sbText;
+        return sbText.toString();
     }
 
     public String getStringBeforeDot(String line) {

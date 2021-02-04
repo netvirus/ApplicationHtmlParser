@@ -21,40 +21,23 @@ public class ApplicationHtmlParser {
     public static void main(String[] args) {
 
         try (Stream<Path> walk = Files.walk(Paths.get("C:\\IN\\"))) {
-
-            List<String> files = walk.map(x -> x.toString()).filter(f -> f.endsWith(".htm")).collect(Collectors.toList());
-
-            files.forEach(fileName -> {
-                StringBuilder fileText = new StringBuilder();
+            List<Path> paths = walk.filter(Files::isRegularFile).collect(Collectors.toList());
+            paths.forEach(f -> {
+                String fullPath = f.toString().replace("IN", "OUT");
+                String dir = f.getParent().toString().replace("IN", "OUT");
                 HtmlParser htmlParser = new HtmlParser();
-
-                try {
-                    fileText = htmlParser.load(fileName);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                fileName = fileName.replace("IN", "OUT");
-                Path path = Paths.get(fileName);
-                String dir =  path.getParent().toString();
                 File newDir = new File(dir);
-                if (!Files.exists(path)) {
-                    newDir.mkdir();
+
+                if (newDir.mkdir()) {
                     LOGGER.info("Created directory: " + dir);
                 }
-
-                try {
-                    File newFile = new File(fileName);
-                    FileWriter fileWriter = new FileWriter(newFile, false);
-                    fileWriter.write(fileText.toString());
-                    fileWriter.close();
-                    LOGGER.info("Writed a file: " + fileName);
+                try (FileWriter fileWriter = new FileWriter(fullPath, false)) {
+                    fileWriter.write(htmlParser.load(f.toString()));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             });
-        } catch (IOException e) {
-            e.printStackTrace();
         }
+        catch (Exception e) {  }
     }
 }
