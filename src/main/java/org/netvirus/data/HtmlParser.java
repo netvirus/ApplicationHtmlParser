@@ -108,7 +108,7 @@ public class HtmlParser {
             if (tmp > 0) {
                 npcName = npcName.replace("!", "");
             }
-            sbText.append("<font color=\"36DC25\">" + npcName + ":</font><br>" + System.lineSeparator());
+            sbText.append("<font color=\"0040FF\">" + npcName + ":</font><br>" + System.lineSeparator());
             stringBuilder.delete(0, stringBuilder.indexOf(":") + 2);
         } catch (Exception e) {
             //  Remove !" where no Npc name
@@ -132,7 +132,14 @@ public class HtmlParser {
                 String buttonName = "";
                 if (StringUtils.countMatches(sbLinks, "|") > 0) {
                     bypass = sbLinks.substring(sbLinks.indexOf("[") + 1, sbLinks.indexOf("|")).trim();
-                    buttonName = sbLinks.substring(sbLinks.indexOf("|") + 1, sbLinks.indexOf("]") - 1).trim();
+                    // Check on ""
+                    int cov = StringUtils.countMatches(stringBuilder, "\"");
+                    if (cov > 0) {
+                        for (int c = 0; c < cov; c++) {
+                            stringBuilder.replace(stringBuilder.indexOf("\""), stringBuilder.indexOf("\"") + 1, "");
+                        }
+                    }
+                    buttonName = sbLinks.substring(sbLinks.indexOf("|") + 1, sbLinks.indexOf("]")).trim();
                 } else {
                     fakeBypass.append(sbLinks.toString()).append("<br1>").append(System.lineSeparator());
                 }
