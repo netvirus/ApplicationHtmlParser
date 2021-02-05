@@ -1,9 +1,6 @@
 package org.netvirus.data;
 
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.ls.LSOutput;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -14,7 +11,6 @@ import java.util.Map;
 
 public class HtmlParser {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(HtmlParser.class);
     private Map<String, String> buttons = new HashMap<>();
 
     public HtmlParser() {
@@ -25,7 +21,6 @@ public class HtmlParser {
         StringBuilder sbText = new StringBuilder();
         StringBuilder fakeBypass = new StringBuilder();;
 
-        LOGGER.info("Loading HTML file: " + fileName);
         Files.lines(Paths.get(fileName), StandardCharsets.UTF_8).forEach(stringBuilder::append);
 
         // Remove extra characters
@@ -194,7 +189,7 @@ public class HtmlParser {
             buttons.forEach((key, value) -> {
                 sbText.append("      <tr>").append(System.lineSeparator());
                 sbText.append("          <td FIXWIDTH=90 align=center>").append(System.lineSeparator());
-                sbText.append("          <button value=\"").append(key).append("\" ");
+                sbText.append("               <button value=\"").append(key).append("\" ");
                 sbText.append("action=\"bypass -h ").append(value).append("\" back=\"l2ui_ct1.button.button_df_small_down\" fore=\"l2ui_ct1.button.button_df_small\" width=\"280\" height=\"25\">").append(System.lineSeparator());
                 sbText.append("          </td>").append(System.lineSeparator());
                 sbText.append("      </tr>").append(System.lineSeparator());
